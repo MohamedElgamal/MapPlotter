@@ -17,8 +17,17 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
-from .views import CustomersUploadView
+from .views import CustomersUploadView, CustomersMigrationView
 
 urlpatterns = [
-    path("customers_csv/", CustomersUploadView.as_view(), name="customers_csv"),
+    path(
+        "customers-csv/",
+        CustomersUploadView.as_view(),
+        name="customers_csv",
+    ),
+    path(
+        "customers-migration/<str:file>",
+        CustomersMigrationView.as_view(),
+        name="customers_migration",
+    ),
 ]
