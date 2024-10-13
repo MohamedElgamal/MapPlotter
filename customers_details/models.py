@@ -10,12 +10,12 @@ class Customers(models.Model):
     customer_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(customer_name__length__gte=2),
-                name="customer_name_length",
-            )
-        ]
+        # constraints = [
+        #     models.CheckConstraint(
+        #         check=models.Q(customer_name__length__gte=2),
+        #         name="customer_name_length",
+        #     )
+        # ]
         db_table = "customers"
 
     def __str__(self):
@@ -24,11 +24,14 @@ class Customers(models.Model):
 
 class OsoulCustomersDetails(models.Model):
     osoul_person_id = models.AutoField(primary_key=True)
+    customer = models.ForeignKey(
+        Customers, on_delete=models.CASCADE, related_name="osoul"
+    )
     osoul_account_num = models.IntegerField(default=0)
     osoul_person_code = models.IntegerField()
     osoul_address = models.CharField(max_length=512, default="", blank=False)
     osoul_person_created_at = models.DateTimeField(auto_now_add=True)
-    osoul_person_update_at = models.DateTimeField(null=True, blank=True)
+    osoul_person_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "osoul_customers_details"

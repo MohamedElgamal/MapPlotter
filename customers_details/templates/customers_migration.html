@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load url%}
 {% load widget_tweaks %}
 {% block title%}Customers CSV{%endblock%}
 {% block content %}
@@ -12,9 +11,9 @@
 </div>
 
 <!-- Execution Button -->
-<form method="post" action="{% url '' %}">
+<form method="post" >
     {% csrf_token %}
-    <button id="executeButton" class="btn btn-primary" onclick="startExecution()">Start Migrating</button>
+    <button type="submit" id="executeButton" class="btn btn-primary" >Start Migrating</button>
 </form>
 <!-- Result Message -->
 <div id="resultMessage" class="mt-3"></div>
@@ -22,7 +21,7 @@
 
 <script>
     // Function to start execution and update progress
-    function startExecution() {
+    function startExecution(event) {
         document.getElementById("executeButton").disabled = true; // Disable button during execution
         let progressBar = document.getElementById("progressBar");
         let resultMessage = document.getElementById("resultMessage");
@@ -43,5 +42,12 @@
             }
         }, 500); // Adjust interval timing as needed
     }
+
+    document.querySelector("form").addEventListener('submit', startExecution)
+   
+    // Set the action endpoint to form 
+    const url = window.location.pathname;
+    console.log(url)
+    document.querySelector('form').action = url; 
 </script>
 {% endblock%}
