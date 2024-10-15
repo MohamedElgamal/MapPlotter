@@ -26,8 +26,21 @@
         let progressBar = document.getElementById("progressBar");
         let resultMessage = document.getElementById("resultMessage");
 
+        const url = window.location.pathname;
+
+        const eventSource = new EventSource(url);
+        eventSource.onmessage = (event) => {
+            let progress = parseInt(event.data); // Convert progress to float
+            progressBar.style.width = progress + "%";
+            progressBar.setAttribute('aria-valuenow', progress);
+            if(width >= 100){
+                resultMessage.innerHTML = '<div class="alert alert-success">Operation Completed Successfully!</div>';
+                document.getELementById("executeButton").disabled = false;
+            }
+        }
+
         // Simulate backend operation
-        let interval = setInterval(function() {
+        {% comment %} let interval = setInterval(function() {
             let width = parseInt(progressBar.style.width);
             
             if (width >= 100) {
@@ -40,7 +53,8 @@
                 progressBar.setAttribute('aria-valuenow', width);
                 progressBar.innerHTML = width + '%';
             }
-        }, 500); // Adjust interval timing as needed
+        }, 500); // Adjust interval timing as needed 
+        {% endcomment %}
     }
 
     document.querySelector("form").addEventListener('submit', startExecution)

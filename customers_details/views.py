@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.core.exceptions import ValidationError
 from django.utils.datastructures import MultiValueDictKeyError
+from django.http import StreamingHttpResponse
 from django.urls import reverse_lazy, reverse
 from django.views.generic.edit import (
     CreateView,
@@ -15,6 +16,7 @@ from .models import (
     CustomerPhones,
     OsoulCustomersDetails,
 )
+from django.db import transaction
 
 # Create your views here.
 
@@ -68,7 +70,11 @@ class CustomersMigrationView(View):
         is_file_found = self.check_file_exists(csv_file)
         if is_file_found:
             csv_dict = self.read_csv_file(f"customers_details/media/{csv_file}")
-            self.migrate_into_customers_schema(csv_dict)
+            # self.migrate_into_customers_schema(csv_dict)
+            return StreamingHttpResponse(
+                self.migrate_into_customers_schema(csv_dict),
+                content_type="text/event-stream",
+            )
         else:
             return render(
                 request,
@@ -102,39 +108,43 @@ class CustomersMigrationView(View):
             return None
 
     def migrate_into_customers_schema(self, customers_dict):
-        for row in customers_dict:
-            customer = Customers(
-                customer_name=row["nameperson"],
-                customer_created_at=row["persondatecreate"],
-            )
-            customer.save()
-            phone = CustomerPhones(
-                phone_num=row["Phonenumber"],
-                customer=customer,
-                phone_created_at=row["persondatecreate"],
-            )
-            phone.save()
-            if row["mobilenumber"] is not "":
+        total_records = len(customers_dict)
+        for i, row in enumerate(customers_dict):
+            with transaction.atomic():
+                customer = Customers(
+                    customer_name=row["nameperson"],
+                    customer_created_at=row["persondatecreate"],
+                )
+                customer.save()
                 phone = CustomerPhones(
-                    phone_num=row["mobilenumber"],
+                    phone_num=row["Phonenumber"],
                     customer=customer,
                     phone_created_at=row["persondatecreate"],
                 )
-            phone.save()
-            osoul_customer_details = OsoulCustomersDetails(
-                osoul_person_id=row["idperson"],
-                customer=customer,
-                osoul_account_num=row["AccountNumber"],
-                osoul_person_code=row["codeperson"],
-                osoul_address=row["address"],
-                osoul_person_created_at=row["persondatecreate"],
-            )
-            osoul_customer_details.save()
-            print(row)
+                phone.save()
+                if row["mobilenumber"] != "":
+                    phone = CustomerPhones(
+                        phone_num=row["mobilenumber"],
+                        customer=customer,
+                        phone_created_at=row["persondatecreate"],
+                    )
+                phone.save()
+                osoul_customer_details = OsoulCustomersDetails(
+                    osoul_person_id=row["idperson"],
+                    customer=customer,
+                    osoul_account_num=row["AccountNumber"],
+                    osoul_person_code=row["codeperson"],
+                    osoul_address=row["address"],
+                    osoul_person_created_at=row["persondatecreate"],
+                )
+                osoul_customer_details.save()
+                progress = (i + 1) / total_records * 100
+                yield progress
 
     # get passed query para (Done)
     # search for file that has passed name (Done)
     # if not exists print error message you need to upload file again (Done)
     # else:
-    # read csv file line by line and start map it into corresponding tables
+    # read csv file line by line and start map it into corresponding tables (Done)
+    # Create asyn operation in frontend to ask the
     # after the process completed move operated file into media/operated directory
